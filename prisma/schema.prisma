@@ -1,0 +1,63 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum RequestStatus {
+  PENDING
+  RESOLVED
+  UNRESOLVED
+}
+
+model HelpRequest {
+  id          String        @id @default(uuid())
+  callerId    String?
+  callerPhone String?
+  question    String
+  status      RequestStatus @default(PENDING)
+  answer      String?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  timeoutAt   DateTime?
+  resolvedBy  String?
+  metadata    Json?
+
+  @@map("help_requests")
+  @@index([status])
+  @@index([createdAt])
+  @@index([timeoutAt])
+}
+
+model KnowledgeBase {
+  id        String   @id @default(uuid())
+  question  String   @unique
+  answer    String
+  source    String?  // 'supervisor' | 'manual' | 'import'
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("knowledge_base")
+  @@index([question])
+  @@index([source])
+}
+
+model SystemLog {
+  id        String   @id @default(uuid())
+  level     String   // 'info' | 'warn' | 'error'
+  event     String   // 'CALL_RECEIVED' | 'HELP_REQUEST_CREATED' etc.
+  message   String
+  metadata  Json?
+  createdAt DateTime @default(now())
+
+  @@map("system_logs")
+  @@index([level])
+  @@index([event])
+  @@index([createdAt])
+}
