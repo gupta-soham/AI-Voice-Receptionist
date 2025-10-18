@@ -26,45 +26,69 @@ The system consists of two main components:
 
 ### Setup
 
-1. **Clone and setup the development environment:**
-
-   **Quick Setup (Recommended):**
-
-   On Windows:
-
-   ```cmd
-   git clone <repository-url>
-   cd ai-voice-receptionist
-   setup.bat
-   ```
-
-   On Linux/macOS:
+1. **Clone the repository:**
 
    ```bash
    git clone <repository-url>
    cd ai-voice-receptionist
-   chmod +x setup.sh
-   ./setup.sh
    ```
 
-   **Manual Setup:**
-
-   On Windows:
-
-   ```cmd
-   git clone <repository-url>
-   cd ai-voice-receptionist
-   scripts\dev-setup.bat
-   ```
-
-   On Linux/macOS:
+2. **Setup environment files:**
 
    ```bash
-   git clone <repository-url>
-   cd ai-voice-receptionist
-   chmod +x scripts/*.sh
-   ./scripts/dev-setup.sh
+   # Copy environment files
+   cp .env.example .env
+   cp python-agent/.env.example python-agent/.env
+
+   # Edit both .env files with your actual API keys
    ```
+
+3. **Start the database:**
+
+   ```bash
+   # Start PostgreSQL database
+   docker-compose up -d postgres
+
+   # Wait for database to be ready
+   docker-compose exec postgres pg_isready -U postgres
+   ```
+
+4. **Install dependencies and setup database:**
+
+   ```bash
+   # Install web dependencies
+   npm install
+
+   # Install Python agent dependencies
+   cd python-agent && pip install -r requirements.txt && cd ..
+
+   # Generate Prisma client and setup database
+   npm run db:generate
+   npm run db:push
+   npm run db:seed
+   ```
+
+### Production Deployment
+
+For production, use the optimized production configuration:
+
+```bash
+# Build production images with multi-stage builds
+docker-compose -f docker-compose.prod.yml build
+
+# Start production services
+docker-compose -f docker-compose.prod.yml up -d
+```
+
+### Docker Optimizations
+
+The system includes several Docker optimizations:
+
+- **Multi-stage builds**: Separate development and production stages for smaller images
+- **Layer caching**: Dependencies cached separately from application code for faster rebuilds
+- **Security**: Non-root users in containers
+- **Build efficiency**: .dockerignore files exclude unnecessary files from build context
+- **Production-ready**: Minimal production images with only required dependencies
 
 2. **Configure environment variables:**
    - Update `.env` with your API keys
@@ -96,7 +120,7 @@ The system consists of two main components:
 ├── lib/                    # Utility functions and configurations
 ├── prisma/                 # Database schema and migrations
 ├── python-agent/           # Python LiveKit voice agent with Gemini 2.0 Flash
-├── scripts/                # Development and setup scripts
+
 ├── types/                  # TypeScript type definitions
 ├── docs/                   # Documentation files
 ├── tests/                  # Test files and test runners
@@ -257,20 +281,17 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 **Database Connection Issues:**
 
-**On Windows:**
-
-```cmd
-REM Reset database
-scripts\dev-reset.bat
-scripts\dev-setup.bat
-```
-
-**On Linux/macOS:**
-
 ```bash
-# Reset database
-./scripts/dev-reset.sh
-./scripts/dev-setup.sh
+# Stop all services
+docker-compose down
+
+# Remove database volume (WARNING: This deletes all data)
+docker volume rm ai-voice-receptionist_postgres_data
+
+# Restart services and reinitialize database
+docker-compose up -d postgres
+npm run db:push
+npm run db:seed
 ```
 
 **Port Conflicts:**
@@ -304,3 +325,9 @@ docker-compose logs -f python-agent
 # Database logs
 docker-compose logs -f postgres
 ```
+
+## 📚 Additional Documentation
+
+- `docs/DOCKER_OPTIMIZATION.md` - Docker build optimizations and best practices
+- `docs/DEMO_SCRIPT.md` - Comprehensive demo script for showcasing the system
+- `docs/TROUBLESHOOTING.md` - Detailed troubleshooting guide
