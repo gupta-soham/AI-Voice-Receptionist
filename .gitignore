@@ -109,3 +109,17 @@ Thumbs.db
 
 # Prisma
 prisma/migrations/dev.db*
+
+# Python-specific (for python-agent directory)
+python-agent/__pycache__/
+python-agent/build/
+python-agent/dist/
+python-agent/downloads/
+python-agent/var/
+python-agent/wheels/
+python-agent/.coverage
+python-agent/.coverage.*
+python-agent/.cache
+python-agent/.pytest_cache/
+python-agent/.venv/
+python-agent/venv/
