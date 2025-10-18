@@ -1,0 +1,71 @@
+version: "3.8"
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15
+    container_name: ai-receptionist-db-prod
+    environment:
+      POSTGRES_DB: ai_receptionist
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-password}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data_prod:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # Next.js Web Application (Production)
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.web
+      target: production
+    container_name: ai-receptionist-web-prod
+    ports:
+      - "3000:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      - DATABASE_URL=postgresql://postgres:${POSTGRES_PASSWORD:-password}@postgres:5432/ai_receptionist?schema=public
+      - NODE_ENV=production
+    restart: unless-stopped
+
+  # Python LiveKit Voice Agent (Production)
+  python-agent:
+    build:
+      context: ./python-agent
+      dockerfile: Dockerfile
+      target: production
+    container_name: ai-receptionist-python-agent-prod
+    depends_on:
+      - web
+    env_file:
+      - .env
+    environment:
+      - BACKEND_API_URL=http://web:3000
+      - NODE_ENV=production
+    restart: unless-stopped
+
+  # Database Admin Interface (Optional)
+  adminer:
+    image: adminer
+    container_name: ai-receptionist-adminer-prod
+    ports:
+      - "8081:8080"
+    depends_on:
+      - postgres
+    environment:
+      - ADMINER_DEFAULT_SERVER=postgres
+    restart: unless-stopped
+
+volumes:
+  postgres_data_prod:
