@@ -8,7 +8,7 @@ services:
     environment:
       POSTGRES_DB: ai_receptionist
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-password}
+      POSTGRES_PASSWORD: password
     ports:
       - "5432:5432"
     volumes:
@@ -35,7 +35,18 @@ services:
     env_file:
       - .env
     environment:
-      - DATABASE_URL=postgresql://postgres:${POSTGRES_PASSWORD:-password}@postgres:5432/ai_receptionist?schema=public
+      - DATABASE_URL=postgresql://postgres:password@postgres:5432/ai_receptionist?schema=public
+      - LIVEKIT_URL=${LIVEKIT_URL}
+      - LIVEKIT_API_KEY=${LIVEKIT_API_KEY}
+      - LIVEKIT_API_SECRET=${LIVEKIT_API_SECRET}
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY}
+      - DEEPGRAM_API_KEY=${DEEPGRAM_API_KEY}
+      - ELEVEN_API_KEY=${ELEVEN_API_KEY}
+      - WEBHOOK_SECRET=${WEBHOOK_SECRET}
+      - AGENT_WEBHOOK_URL=${AGENT_WEBHOOK_URL}
+      - JWT_SECRET=${JWT_SECRET}
+      - CONFIDENCE_THRESHOLD=${CONFIDENCE_THRESHOLD}
+      - LOG_LEVEL=${LOG_LEVEL}
       - NODE_ENV=production
     restart: unless-stopped
 
@@ -46,12 +57,25 @@ services:
       dockerfile: Dockerfile
       target: production
     container_name: ai-receptionist-python-agent-prod
+    ports:
+      - "8080:8080" # Expose webhook server port
     depends_on:
       - web
     env_file:
       - .env
     environment:
       - BACKEND_API_URL=http://web:3000
+      - LIVEKIT_URL=${LIVEKIT_URL}
+      - LIVEKIT_API_KEY=${LIVEKIT_API_KEY}
+      - LIVEKIT_API_SECRET=${LIVEKIT_API_SECRET}
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY}
+      - DEEPGRAM_API_KEY=${DEEPGRAM_API_KEY}
+      - ELEVEN_API_KEY=${ELEVEN_API_KEY}
+      - WEBHOOK_SECRET=${WEBHOOK_SECRET}
+      - WEBHOOK_PORT=8080
+      - CONFIDENCE_THRESHOLD=${CONFIDENCE_THRESHOLD}
+      - AGENT_NAME=${AGENT_NAME}
+      - LOG_LEVEL=${LOG_LEVEL}
       - NODE_ENV=production
     restart: unless-stopped
 
