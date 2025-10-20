@@ -1,25 +1,35 @@
-import type { Metadata } from "next";
-import { Inter } from "next/font/google";
-import "./globals.css";
-import { Providers } from "./providers";
+import type { Metadata } from 'next'
+import { Inter } from 'next/font/google'
+import './globals.css'
+import { Providers } from './providers'
+import { Sidebar } from '@/components/layout/sidebar'
+import { Header } from '@/components/layout/header'
 
-const inter = Inter({ subsets: ["latin"] });
+const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: "AI Voice Receptionist",
-  description: "Human-in-the-loop AI supervisor for voice calls",
-};
+  title: 'AI Voice Receptionist',
+  description: 'Human-in-the-loop AI supervisor for voice calls',
+}
 
 export default function RootLayout({
   children,
 }: {
-  children: React.ReactNode;
+  children: React.ReactNode
 }) {
   return (
     <html lang="en">
       <body className={inter.className}>
-        <Providers>{children}</Providers>
+        <Providers>
+          <div className="flex h-screen flex-col">
+            <Header />
+            <div className="flex flex-1 overflow-hidden">
+              <Sidebar />
+              <main className="flex-1 overflow-auto">{children}</main>
+            </div>
+          </div>
+        </Providers>
       </body>
     </html>
-  );
+  )
 }

@@ -8,8 +8,8 @@ A locally runnable system that receives phone calls via LiveKit, escalates unkno
 
 The system consists of two main components:
 
-- **Python Voice Agent**: LiveKit-based agent using Gemini 2.0 Flash that handles phone calls with STT/LLM/TTS pipeline
-- **Supervisor Dashboard**: Next.js web application for human oversight and knowledge management
+- **Python Voice Agent**: LiveKit-based agent using Gemini 2.0 Flash that handles phone calls with STT/LLM/TTS pipeline and webhook receiver for real-time supervisor responses
+- **Supervisor Dashboard**: Next.js web application for human oversight and knowledge management with webhook notifications
 
 ## 🚀 Quick Start
 
@@ -60,7 +60,12 @@ The system consists of two main components:
    npm install
 
    # Install Python agent dependencies
-   cd python-agent && pip install -r requirements.txt && cd ..
+   cd python-agent
+   python -m venv venv
+   # Windows: venv\Scripts\activate
+   # macOS/Linux: source venv/bin/activate
+   pip install -r requirements.txt
+   cd ..
 
    # Generate Prisma client and setup database
    npm run db:generate
@@ -103,12 +108,16 @@ The system includes several Docker optimizations:
 
    # In another terminal, start the voice agent
    cd python-agent
+   # Activate virtual environment first
+   # Windows: venv\Scripts\activate
+   # macOS/Linux: source venv/bin/activate
    python voice_agent.py console
    ```
 
 4. **Access the applications:**
    - Supervisor Dashboard: http://localhost:3000
    - Database Admin (Adminer): http://localhost:8081
+   - Voice Agent Webhook: http://localhost:8080/health
    - Prisma Studio: `npm run db:studio`
    - API Health Check: http://localhost:3000/api/health
 
@@ -145,11 +154,10 @@ The system includes several Docker optimizations:
 
 **Python Voice Agent:**
 
-- `cd python-agent && python voice_agent.py console` - Start agent in console mode
-- `cd python-agent && python voice_agent.py dev` - Start agent in development mode
-- `cd python-agent && pip install -r requirements.txt` - Install agent dependencies
-- `cd python-agent && python test_agent.py` - Test agent configuration
-- `cd python-agent && python setup.py` - Setup agent environment
+- `cd python-agent && source venv/bin/activate && python voice_agent.py console` - Start agent in console mode
+- `cd python-agent && source venv/bin/activate && python voice_agent.py dev` - Start agent in development mode
+- `cd python-agent && python -m venv venv && pip install -r requirements.txt` - Setup agent environment
+- `cd python-agent && source venv/bin/activate && python test_agent_comprehensive.py` - Run comprehensive tests
 
 **Docker:**
 
@@ -169,7 +177,7 @@ The system includes several Docker optimizations:
 The system uses PostgreSQL with Prisma ORM. The database schema includes:
 
 - `HelpRequest` - Escalated queries from voice agent
-- `KnowledgeBase` - Question-answer pairs for the AI
+- `KnowledgeBase` - Question-answer pairs for the AI's knowledge
 - `SystemLog` - Audit trail and debugging logs
 
 ### Key Directories
@@ -200,7 +208,7 @@ Key configurations:
 The system supports runtime feature flags for:
 
 - Real-time updates
-- Knowledge base learning
+- AI knowledge learning
 - Advanced logging
 - Metrics collection
 
@@ -233,7 +241,10 @@ npm run test:coverage
 npm run build
 
 # Voice agent is ready to run (no build step needed for Python)
-cd python-agent && python voice_agent.py dev
+cd python-agent
+# Activate virtual environment
+source venv/bin/activate  # or venv\Scripts\activate on Windows
+python voice_agent.py dev
 ```
 
 ### Docker Production
@@ -255,7 +266,7 @@ docker-compose -f docker-compose.prod.yml up -d
 - `POST /api/help-requests/[id]/resolve` - Resolve a request
 - `POST /api/help-requests/[id]/mark-unresolved` - Mark as unresolved
 
-### Knowledge Base
+### Knowledge Management
 
 - `GET /api/knowledge` - List knowledge entries
 - `POST /api/knowledge` - Create knowledge entry
@@ -298,6 +309,7 @@ npm run db:seed
 
 - Web app: Change port in `docker-compose.yml` (default: 3000)
 - Database: Change PostgreSQL port in `docker-compose.yml` (default: 5432)
+- Voice Agent Webhook: Change port in `docker-compose.yml` (default: 8080)
 
 **LiveKit Connection Issues:**
 
@@ -308,10 +320,12 @@ npm run db:seed
 **Python Agent Issues:**
 
 - Ensure Python 3.11+ is installed
-- Install dependencies: `cd python-agent && pip install -r requirements.txt`
+- Setup virtual environment: `cd python-agent && python -m venv venv`
+- Activate environment: `source venv/bin/activate` (or `venv\Scripts\activate` on Windows)
+- Install dependencies: `pip install -r requirements.txt`
 - Check API keys in `python-agent/.env`
 - Python agent connects directly to LiveKit
-- Test the agent: `cd python-agent && python test_agent.py`
+- Test the agent: `cd python-agent && source venv/bin/activate && python test_agent_comprehensive.py`
 
 For more help, check the logs:
 

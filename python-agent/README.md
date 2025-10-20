@@ -4,18 +4,33 @@ This is a Python-based LiveKit agent that provides real-time voice interaction c
 
 ## 🚀 Quick Start
 
-### 1. Install Dependencies
+### 1. Create Virtual Environment
 
 ```bash
 cd python-agent
+
+# Create virtual environment
+python -m venv venv
+
+# Activate virtual environment
+# On Windows:
+venv\Scripts\activate
+# On macOS/Linux:
+source venv/bin/activate
+```
+
+### 2. Install Dependencies
+
+```bash
+# Make sure virtual environment is activated
 pip install -r requirements.txt
 ```
 
-### 2. Environment Setup
+### 3. Environment Setup
 
 The `.env` file is already configured with your API keys. Make sure your Node.js backend is running on `http://localhost:3000`.
 
-### 3. Run the Agent
+### 4. Run the Agent
 
 #### Option A: CLI Mode (for testing)
 
@@ -46,21 +61,30 @@ python voice_agent.py connect --room-name "reception-room"
 1. **Voice Activity Detection** (Silero VAD) - Detects when someone is speaking
 2. **Speech-to-Text** (Deepgram) - Converts speech to text
 3. **Knowledge Base Query** - Checks existing answers in your database
-4. **LLM Processing** (OpenAI GPT-4) - Generates responses for unknown queries
+4. **LLM Processing** (Google Gemini) - Generates responses for unknown queries
 5. **Text-to-Speech** (ElevenLabs) - Converts responses back to speech
 6. **Escalation** - Creates help requests in your dashboard for complex queries
+7. **Webhook Receiver** - Receives supervisor responses and delivers them back to callers
 
 ### Built-in Functions
 
-- `lookup_business_hours()` - Returns business operating hours
-- `lookup_contact_info()` - Provides contact information
-- `check_appointment_availability()` - Helps with scheduling
+- `ask_for_clarification()` - Asks users to clarify unclear questions
+- `escalate_to_supervisor()` - Escalates questions not covered in AI's knowledge
 
-### Database Integration
+### AI Integration
 
-- Queries your existing knowledge base via the Node.js API
-- Creates help requests for escalation to human supervisors
-- All interactions are logged and tracked
+- **Knowledge Access**: AI has direct access to all knowledge via context (refreshes every minute)
+- **Intelligent Escalation**: Escalates when questions aren't covered in its knowledge
+- **Automatic Learning**: Supervisor responses expand the AI's knowledge automatically
+- **Help Request Creation**: Escalated queries stored in database via `/api/help-requests`
+- **Duplicate Prevention**: Checks for similar pending requests before escalating
+
+### Webhook System
+
+- **HTTP Server**: Runs on port 8080 to receive supervisor responses
+- **Real-time Updates**: Delivers supervisor answers back to callers immediately
+- **Security**: HMAC-SHA256 signature verification for webhook authenticity
+- **Health Monitoring**: Health check endpoint at `/health`
 
 ## 🧪 Testing Methods
 
@@ -92,7 +116,38 @@ python voice_agent.py dev --local-audio
 4. Connect the agent to the room
 5. Join the room from the dashboard to test
 
-### 4. Phone Integration (Advanced)
+### 4. Comprehensive Testing
+
+```bash
+# Run complete test suite (make sure backend is running)
+python test_agent_comprehensive.py
+```
+
+This comprehensive test includes:
+
+- Backend API connectivity
+- Knowledge search functionality
+- Help request creation and escalation
+- Supervisor resolution workflow
+- AI knowledge automatic updates
+- Webhook delivery testing
+- Dashboard visibility checks
+- System health monitoring
+
+### 5. Individual Component Testing
+
+```bash
+# Test webhook receiver (run this after starting the agent)
+python test_webhook.py
+
+# Test escalation functionality
+python test_escalation_direct.py
+
+# Debug knowledge content
+python debug_knowledge_base.py
+```
+
+### 6. Phone Integration (Advanced)
 
 - Connect through SIP providers like Twilio
 - Requires additional configuration
@@ -181,6 +236,14 @@ The agent provides detailed logging:
    ```bash
    # Terminal 4: Python agent
    cd python-agent
+
+   # Activate virtual environment first
+   # Windows:
+   venv\Scripts\activate
+   # macOS/Linux:
+   source venv/bin/activate
+
+   # Run the agent
    python voice_agent.py console  # or 'dev' for LiveKit mode
    ```
 
@@ -199,6 +262,30 @@ docker build -t voice-agent .
 
 # Run with environment variables
 docker run -d --env-file .env voice-agent
+```
+
+### Local Development Setup
+
+```bash
+# Complete setup from scratch
+cd python-agent
+
+# Create and activate virtual environment
+python -m venv venv
+# Windows:
+venv\Scripts\activate
+# macOS/Linux:
+source venv/bin/activate
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Copy environment file
+cp .env.example .env
+# Edit .env with your API keys
+
+# Test the setup
+python test_agent_comprehensive.py
 ```
 
 ### Cloud Deployment
@@ -221,9 +308,10 @@ docker run -d --env-file .env voice-agent
 ### Common Issues
 
 1. **Agent won't start**:
+   - Make sure virtual environment is activated
    - Check API keys in `.env`
    - Ensure backend is running on port 3000
-   - Verify Python dependencies are installed
+   - Verify Python dependencies are installed: `pip list`
 
 2. **No audio in console mode**:
    - Console mode is text-only
