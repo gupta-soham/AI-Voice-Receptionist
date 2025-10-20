@@ -6,10 +6,10 @@ A locally runnable system that receives phone calls via LiveKit, escalates unkno
 
 ## 🏗️ Architecture
 
-The system consists of two main components:
+The system consists of two main components with enhanced user experience:
 
-- **Python Voice Agent**: LiveKit-based agent using Gemini 2.0 Flash that handles phone calls with STT/LLM/TTS pipeline and webhook receiver for real-time supervisor responses
-- **Supervisor Dashboard**: Next.js web application for human oversight and knowledge management with webhook notifications
+- **Python Voice Agent**: LiveKit-based agent using Gemini 2.0 Flash with intelligent fuzzy matching, automatic knowledge learning, and graceful TTS quota handling
+- **Next.js Dashboard**: Modern web application with voice input, toast notifications, real-time conversation interface, and comprehensive supervisor tools
 
 ## 🚀 Quick Start
 
@@ -180,14 +180,33 @@ The system uses PostgreSQL with Prisma ORM. The database schema includes:
 - `KnowledgeBase` - Question-answer pairs for the AI's knowledge
 - `SystemLog` - Audit trail and debugging logs
 
+### Key Features
+
+- **🎤 Voice Input**: Continuous microphone tracking with real-time audio level visualization
+- **🔔 Toast Notifications**: Comprehensive feedback system using Sonner with success, error, warning, and info messages
+- **💬 Conversation Interface**: Chat-like interface with timestamps and message history
+- **🧠 Intelligent Matching**: Fuzzy matching for business hours, services, pricing with keyword recognition
+- **📚 Auto-Learning**: Supervisor responses automatically expand the AI's knowledge base
+- **🔊 TTS Resilience**: Graceful degradation when text-to-speech quota is exceeded
+
+### Testing Interface
+
+Navigate to `http://localhost:3000` for the comprehensive test interface featuring:
+
+- Voice input with microphone button and audio level indicators
+- Text input with quick test question buttons
+- Real-time conversation history with chat bubbles
+- API response viewer for debugging
+- Toast notifications for all operations
+
 ### Key Directories
 
-- **`app/`** - Next.js 14 App Router with API routes and pages
-- **`components/`** - Reusable React components with shadcn/ui
-- **`python-agent/`** - Standalone Python voice agent with Gemini 2.0 Flash
-- **`lib/`** - Shared utilities, database client, and webhook handlers
-- **`prisma/`** - Database schema, migrations, and seed data
-- **`docs/`** - Comprehensive documentation and guides
+- **`app/`** - Next.js 15 App Router with voice-enabled test interface and API routes
+- **`components/`** - Enhanced React components with voice input, toast notifications, and shadcn/ui
+- **`python-agent/`** - Standalone Python voice agent with Gemini 2.0 Flash and webhook receiver
+- **`lib/`** - Voice agent logic, fuzzy matching, database client, and webhook handlers
+- **`prisma/`** - Database schema, migrations, and comprehensive seed data
+- **`docs/`** - Updated documentation reflecting current features
 - **`tests/`** - System, performance, and validation tests
 
 ## 🔧 Configuration
@@ -259,19 +278,52 @@ docker-compose -f docker-compose.prod.yml up -d
 
 ## 📝 API Documentation
 
-### Help Requests
+### Core API Endpoints
+
+#### Help Requests
 
 - `POST /api/help-requests` - Create new help request
 - `GET /api/help-requests` - List help requests with filtering
-- `POST /api/help-requests/[id]/resolve` - Resolve a request
-- `POST /api/help-requests/[id]/mark-unresolved` - Mark as unresolved
+- `POST /api/help-requests/[id]/resolve` - Resolve a request (auto-adds to knowledge base)
 
-### Knowledge Management
+#### Knowledge Management
 
-- `GET /api/knowledge` - List knowledge entries
+- `GET /api/knowledge` - List knowledge entries with search
 - `POST /api/knowledge` - Create knowledge entry
 - `PUT /api/knowledge/[id]` - Update knowledge entry
 - `DELETE /api/knowledge/[id]` - Delete knowledge entry
+
+#### Voice Agent Processing
+
+- `POST /api/voice-agent/process` - Process messages with fuzzy matching and LLM
+- `POST /api/voice-agent/tts` - Generate text-to-speech audio (with quota handling)
+- `POST /api/voice-agent/check-updates` - Check for resolved help requests
+
+#### System Health
+
+- `GET /api/health` - System health check with comprehensive metrics
+
+## 🎯 Recent Enhancements
+
+### Voice Input & User Experience
+
+- **Continuous Microphone Tracking**: Real-time voice recognition with visual audio level feedback
+- **Toast Notification System**: Comprehensive user feedback using Sonner with custom icons
+- **Conversation Interface**: Chat-like UI with message bubbles and timestamps
+- **Fuzzy Question Matching**: Intelligent pattern recognition for business hours, services, pricing
+
+### AI Improvements
+
+- **Three-Tier Confidence System**: High (direct answer), Medium (ask clarification), Low (escalate)
+- **Auto-Learning Knowledge Base**: Supervisor responses automatically added to knowledge
+- **Enhanced Business Hours Matching**: Handles variations like "timings", "when open", "hours"
+- **TTS Quota Management**: Graceful degradation when ElevenLabs quota exceeded
+
+### System Reliability
+
+- **Error Handling**: Comprehensive error management with user-friendly messages
+- **API Optimization**: Removed unused endpoints for cleaner codebase
+- **Performance**: Improved response times with fuzzy matching preprocessing
 
 ## 🤝 Contributing
 

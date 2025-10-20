@@ -1,6 +1,6 @@
 # 🎙️ LiveKit Voice Agent for AI Receptionist
 
-This is a Python-based LiveKit agent that provides real-time voice interaction capabilities for the AI Voice Receptionist system.
+This is a Python-based LiveKit agent that provides real-time voice interaction capabilities for the AI Voice Receptionist system. The agent features intelligent fuzzy matching, automatic knowledge base learning, and seamless supervisor escalation with toast notifications.
 
 ## 🚀 Quick Start
 
@@ -71,6 +71,15 @@ python voice_agent.py connect --room-name "reception-room"
 - `ask_for_clarification()` - Asks users to clarify unclear questions
 - `escalate_to_supervisor()` - Escalates questions not covered in AI's knowledge
 
+### Enhanced Features
+
+- **Fuzzy Matching**: Intelligent pattern matching for business hours, services, pricing, and more
+- **Toast Notifications**: Real-time user feedback with success, error, warning, and info messages
+- **Voice Input**: Continuous microphone tracking with visual audio level indicators
+- **Auto-Learning**: Supervisor responses automatically expand the knowledge base
+- **TTS Quota Handling**: Graceful degradation when text-to-speech quota is exceeded
+- **Confidence Tiers**: Three-level confidence system (High/Medium/Low) for better response handling
+
 ### AI Integration
 
 - **Knowledge Access**: AI has direct access to all knowledge via context (refreshes every minute)
@@ -88,7 +97,17 @@ python voice_agent.py connect --room-name "reception-room"
 
 ## 🧪 Testing Methods
 
-### 1. Console Mode Testing
+### 1. Web Interface Testing (Recommended)
+
+Navigate to `http://localhost:3000` for the comprehensive test interface featuring:
+
+- **Voice Input**: Click microphone button for continuous voice recognition
+- **Text Input**: Type messages with quick test question buttons
+- **Real-time Feedback**: Toast notifications for all operations
+- **Conversation History**: Visual chat-like interface with timestamps
+- **API Response Viewer**: See raw JSON responses for debugging
+
+### 2. Console Mode Testing
 
 ```bash
 python voice_agent.py console

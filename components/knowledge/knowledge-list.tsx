@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { KnowledgeBase } from '@/types'
 import { formatDate } from '@/lib/utils'
+import { toast } from 'sonner'
 import {
   BookOpen,
   Search,
@@ -64,10 +65,13 @@ export function KnowledgeList({ onCreateNew, onEdit }: KnowledgeListProps) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['knowledge'] })
+      toast.success('Knowledge entry deleted successfully')
     },
     onError: error => {
-      console.error('Failed to delete knowledge entry:', error)
-      // TODO: Show error toast
+      toast.error('Failed to delete knowledge entry', {
+        description:
+          error instanceof Error ? error.message : 'Unknown error occurred',
+      })
     },
   })
 
