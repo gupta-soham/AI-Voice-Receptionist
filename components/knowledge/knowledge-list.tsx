@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -34,17 +34,28 @@ interface KnowledgeResponse {
 export function KnowledgeList({ onCreateNew, onEdit }: KnowledgeListProps) {
   const [page, setPage] = useState(1)
   const [search, setSearch] = useState('')
+  const [debouncedSearch, setDebouncedSearch] = useState('')
   const queryClient = useQueryClient()
 
+  // Debounce search input
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(search)
+      setPage(1) // Reset to first page when search changes
+    }, 500) // 500ms delay
+
+    return () => clearTimeout(timer)
+  }, [search])
+
   const { data, isLoading, error } = useQuery<KnowledgeResponse>({
-    queryKey: ['knowledge', page, search],
+    queryKey: ['knowledge', page, debouncedSearch],
     queryFn: async () => {
       const params = new URLSearchParams({
         page: page.toString(),
         limit: '10',
       })
 
-      if (search) params.append('search', search)
+      if (debouncedSearch) params.append('search', debouncedSearch)
 
       const response = await fetch(`/api/knowledge?${params}`)
       if (!response.ok) throw new Error('Failed to fetch knowledge base')
@@ -158,8 +169,13 @@ export function KnowledgeList({ onCreateNew, onEdit }: KnowledgeListProps) {
               placeholder="Search questions and answers..."
               value={search}
               onChange={e => setSearch(e.target.value)}
-              className="w-full pl-10 pr-3 py-2 border border-input rounded-md bg-background text-sm"
+              className="w-full pl-10 pr-3 py-2 border border-input rounded-md bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
             />
+            {search && search !== debouncedSearch && (
+              <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                <div className="animate-spin h-4 w-4 border-2 border-primary border-t-transparent rounded-full"></div>
+              </div>
+            )}
           </div>
         </div>
 
@@ -178,11 +194,11 @@ export function KnowledgeList({ onCreateNew, onEdit }: KnowledgeListProps) {
               <BookOpen className="mx-auto h-12 w-12 mb-4 opacity-50" />
               <p>No knowledge base entries found</p>
               <p className="text-sm mt-2">
-                {search
+                {debouncedSearch
                   ? 'Try adjusting your search terms'
                   : 'Create your first entry to get started'}
               </p>
-              {!search && (
+              {!debouncedSearch && (
                 <Button className="mt-4" onClick={onCreateNew}>
                   <Plus className="mr-2 h-4 w-4" />
                   Add First Entry
