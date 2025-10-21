@@ -35,7 +35,15 @@ The `.env` file is already configured with your API keys. Make sure your Node.js
 #### Option A: CLI Mode (for testing)
 
 ```bash
+# Normal mode (minimal logging)
 python voice_agent.py console
+
+# Verbose mode (detailed logging) - add --verbose or -v anywhere in the command
+python voice_agent.py --verbose console
+# or
+python voice_agent.py console --verbose
+# or
+python voice_agent.py -v console
 ```
 
 This starts the agent in console mode where you can type messages and hear responses through your computer's speakers.
@@ -43,7 +51,13 @@ This starts the agent in console mode where you can type messages and hear respo
 #### Option B: LiveKit Room Mode
 
 ```bash
+# Normal mode (minimal logging)
 python voice_agent.py dev
+
+# Verbose mode (detailed logging)
+python voice_agent.py --verbose dev
+# or
+python voice_agent.py dev --verbose
 ```
 
 This connects the agent to your LiveKit cloud instance and waits for incoming calls.
@@ -51,7 +65,11 @@ This connects the agent to your LiveKit cloud instance and waits for incoming ca
 #### Option C: Connect to Specific Room
 
 ```bash
+# Normal mode
 python voice_agent.py connect --room-name "reception-room"
+
+# Verbose mode
+python voice_agent.py --verbose connect --room-name "reception-room"
 ```
 
 ## 🎯 How It Works
@@ -110,22 +128,32 @@ Navigate to `http://localhost:3000` for the comprehensive test interface featuri
 ### 2. Console Mode Testing
 
 ```bash
+# Normal mode (clean output)
 python voice_agent.py console
+
+# Verbose mode (detailed logs)
+python voice_agent.py --verbose console
 ```
 
 - Type messages to test the agent's responses
 - Great for debugging and development
 - No voice required - text-based interaction
+- Use `--verbose` flag for detailed logging during development
 
 ### 2. Local Audio Testing
 
 ```bash
+# Normal mode
 python voice_agent.py dev --local-audio
+
+# Verbose mode for debugging
+python voice_agent.py --verbose dev --local-audio
 ```
 
 - Uses your computer's microphone and speakers
 - Real voice interaction testing
 - Perfect for development
+- Add `--verbose` for detailed debugging information
 
 ### 3. LiveKit Dashboard Testing
 
@@ -173,6 +201,29 @@ python debug_knowledge_base.py
 - See LiveKit SIP documentation
 
 ## 🔧 Configuration
+
+### Command Line Options
+
+- `--verbose` or `-v` - Enable detailed logging for debugging
+- `console` - Run in console mode (text-based testing)
+- `dev` - Run in LiveKit development mode
+- `connect --room-name <name>` - Connect to specific room
+
+### Logging Levels
+
+**Normal Mode** (default):
+
+- Shows essential information only
+- Clean output with minimal noise
+- Perfect for production use
+
+**Verbose Mode** (`--verbose` or `-v`):
+
+- Detailed logging for all operations
+- Knowledge base refresh notifications
+- Escalation details and request IDs
+- Webhook and API interaction logs
+- Useful for development and debugging
 
 ### Environment Variables
 
@@ -264,6 +315,9 @@ The agent provides detailed logging:
 
    # Run the agent
    python voice_agent.py console  # or 'dev' for LiveKit mode
+
+   # For debugging with detailed logs:
+   python voice_agent.py --verbose console
    ```
 
 3. **Test the interaction**:

@@ -111,7 +111,12 @@ The system includes several Docker optimizations:
    # Activate virtual environment first
    # Windows: venv\Scripts\activate
    # macOS/Linux: source venv/bin/activate
+
+   # Normal mode (clean output)
    python voice_agent.py console
+
+   # Verbose mode (detailed logging for debugging)
+   python voice_agent.py --verbose console
    ```
 
 4. **Access the applications:**

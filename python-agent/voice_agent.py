@@ -7,6 +7,7 @@ import aiohttp
 import json
 import hmac
 import hashlib
+import sys
 from typing import Optional, Dict, Any
 from dotenv import load_dotenv
 from aiohttp import web, ClientSession
@@ -29,8 +30,40 @@ load_dotenv()
 
 # Using official Google plugin for Gemini integration
 
-# Configure logging
-logging.basicConfig(level=logging.INFO)
+# Configure logging based on verbose flag
+def setup_logging(verbose: bool = False):
+    """Setup logging configuration based on verbosity level"""
+    if verbose:
+        logging.basicConfig(
+            level=logging.INFO,
+            format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+        )
+        # Enable debug logging for LiveKit components in verbose mode
+        logging.getLogger("livekit").setLevel(logging.INFO)
+    else:
+        logging.basicConfig(
+            level=logging.WARNING,
+            format='%(levelname)s: %(message)s'
+        )
+        # Suppress most LiveKit logs in normal mode
+        logging.getLogger("livekit").setLevel(logging.ERROR)
+        logging.getLogger("aiohttp").setLevel(logging.ERROR)
+        logging.getLogger("deepgram").setLevel(logging.ERROR)
+        logging.getLogger("elevenlabs").setLevel(logging.ERROR)
+
+# Check for verbose flag and remove it from sys.argv before LiveKit CLI processes it
+verbose_args = ["--verbose", "-v", "--debug"]
+verbose_mode = (
+    os.getenv("VERBOSE", "").lower() in ["true", "1", "yes"] or
+    any(arg in sys.argv for arg in verbose_args)
+)
+
+# Remove verbose flags from sys.argv so LiveKit CLI doesn't see them
+original_argv = sys.argv.copy()
+sys.argv = [arg for arg in sys.argv if arg not in verbose_args]
+
+setup_logging(verbose_mode)
+
 logger = logging.getLogger(__name__)
 
 # Global variables for webhook handling
@@ -79,10 +112,14 @@ class VoiceReceptionistAgent:
                                 
                                 self.knowledge_base_content = knowledge_text
                                 self.last_knowledge_update = current_time
-                                logger.info(f"📚 {'Refreshed' if force_refresh else 'Loaded'} {len(entries)} knowledge base entries")
+                                if verbose_mode:
+                                    logger.info(f"📚 {'Refreshed' if force_refresh else 'Loaded'} {len(entries)} knowledge base entries")
+                                else:
+                                    print(f"📚 Knowledge base {'refreshed' if force_refresh else 'loaded'}: {len(entries)} entries")
                                 return knowledge_text
                             else:
-                                logger.info("📚 No knowledge base entries found")
+                                if verbose_mode:
+                                    logger.info("📚 No knowledge base entries found")
                                 fallback = "KNOWLEDGE BASE: Empty"
                                 self.knowledge_base_content = fallback
                                 self.last_knowledge_update = current_time
@@ -101,21 +138,37 @@ class VoiceReceptionistAgent:
             return self.knowledge_base_content
 
     async def refresh_knowledge_base_periodically(self):
-        """Background task to periodically refresh knowledge base and help requests"""
+        """Background task to periodically refresh knowledge base every 60 seconds"""
         while True:
             try:
-                # Refresh knowledge base every minute
                 await asyncio.sleep(self.knowledge_refresh_interval)
                 await self.load_knowledge_base(force_refresh=True)
-                
-                # Refresh help requests more frequently (every 30 seconds)
-                await asyncio.sleep(30)
-                await self.load_pending_help_requests(force_refresh=True)
             except asyncio.CancelledError:
-                logger.info("📚 Knowledge and help requests refresh task cancelled")
+                if verbose_mode:
+                    logger.info("📚 Knowledge base refresh task cancelled")
+                else:
+                    print("📚 KB refresh task stopped")
                 break
             except Exception as e:
-                logger.error(f"Error in periodic refresh: {e}")
+                logger.error(f"Error in knowledge base refresh: {e}")
+                print(f"⚠️  KB refresh error: {e}")
+                await asyncio.sleep(30)  # Wait before retrying
+
+    async def refresh_help_requests_periodically(self):
+        """Background task to periodically refresh help requests every 45 seconds"""
+        while True:
+            try:
+                await asyncio.sleep(self.help_requests_refresh_interval)
+                await self.load_pending_help_requests(force_refresh=True)
+            except asyncio.CancelledError:
+                if verbose_mode:
+                    logger.info("📋 Help requests refresh task cancelled")
+                else:
+                    print("📋 HR refresh task stopped")
+                break
+            except Exception as e:
+                logger.error(f"Error in help requests refresh: {e}")
+                print(f"⚠️  HR refresh error: {e}")
                 await asyncio.sleep(30)  # Wait before retrying
 
     async def load_pending_help_requests(self, force_refresh: bool = False) -> list:
@@ -139,7 +192,10 @@ class VoiceReceptionistAgent:
                             
                             self.pending_help_requests = requests
                             self.last_help_requests_update = current_time
-                            logger.info(f"📋 Loaded {len(requests)} pending help requests")
+                            if verbose_mode:
+                                logger.info(f"📋 Loaded {len(requests)} pending help requests")
+                            else:
+                                print(f"📋 Help requests refreshed: {len(requests)} pending")
                             return requests
                         else:
                             logger.warning(f"Help requests API returned status {response.status}")
@@ -149,7 +205,8 @@ class VoiceReceptionistAgent:
                 return self.pending_help_requests or []
         else:
             # Return cached requests
-            logger.debug("📋 Using cached pending help requests")
+            if verbose_mode:
+                logger.debug("📋 Using cached pending help requests")
             return self.pending_help_requests
 
     def check_duplicate_request(self, question: str, caller_id: str) -> dict:
@@ -202,7 +259,8 @@ class VoiceReceptionistAgent:
                             relevance_score = best_match.get("relevanceScore", 0)
                             confidence = min(0.95, max(0.6, relevance_score / 10))
                             
-                            logger.info(f"📚 Fallback API search found match: score={relevance_score}")
+                            if verbose_mode:
+                                logger.info(f"📚 Fallback API search found match: score={relevance_score}")
                             return {
                                 "answer": best_match["answer"],
                                 "confidence": confidence,
@@ -210,7 +268,8 @@ class VoiceReceptionistAgent:
                                 "question_matched": best_match["question"]
                             }
                         else:
-                            logger.info(f"📚 No API matches found for: '{question}'")
+                            if verbose_mode:
+                                logger.info(f"📚 No API matches found for: '{question}'")
                             return {
                                 "answer": None,
                                 "confidence": 0.0,
@@ -265,7 +324,8 @@ class VoiceReceptionistAgent:
                                 "question": question,
                                 "created_at": asyncio.get_event_loop().time()
                             }
-                            logger.info(f"📝 Created help request {request_id} for caller {caller_id}")
+                            if verbose_mode:
+                                logger.info(f"📝 Created help request {request_id} for caller {caller_id}")
                         
                         return request_id
                     else:
@@ -299,7 +359,8 @@ class VoiceReceptionistAgent:
         answer = request_data.get("answer")
         caller_id = request_data.get("callerId")
         
-        logger.info(f"📞 Received resolution for request {request_id}")
+        if verbose_mode:
+            logger.info(f"📞 Received resolution for request {request_id}")
         
         # Check if we have this request pending
         if request_id in self.pending_requests:
@@ -314,19 +375,22 @@ class VoiceReceptionistAgent:
                         instructions=f"The supervisor has provided this answer to the caller's question: {answer}. "
                                    f"Deliver this answer naturally and ask if there's anything else you can help with."
                     )
-                    logger.info(f"✅ Delivered answer to caller {caller_id}")
+                    print(f"✅ Delivered answer to caller {caller_id}")
                 except Exception as e:
                     logger.error(f"Error delivering answer to caller: {e}")
             else:
-                logger.warning(f"No active session found for caller {caller_id}")
+                if verbose_mode:
+                    logger.warning(f"No active session found for caller {caller_id}")
             
             # Remove from pending requests
             del self.pending_requests[request_id]
         else:
-            logger.warning(f"Received resolution for unknown request {request_id}")
+            if verbose_mode:
+                logger.warning(f"Received resolution for unknown request {request_id}")
         
         # Refresh knowledge base since supervisor may have added new knowledge
-        logger.info("📚 Refreshing knowledge base after supervisor resolution")
+        if verbose_mode:
+            logger.info("📚 Refreshing knowledge base after supervisor resolution")
         await self.load_knowledge_base(force_refresh=True)
 
 # Webhook server handlers
@@ -385,7 +449,10 @@ def start_webhook_server(port: int = 8080):
             await runner.setup()
             site = web.TCPSite(runner, 'localhost', port)
             await site.start()
-            logger.info(f"🔗 Webhook server started on http://localhost:{port}")
+            if verbose_mode:
+                logger.info(f"🔗 Webhook server started on http://localhost:{port}")
+            else:
+                print(f"🔗 Webhook server ready on port {port}")
             
             # Keep the server running
             try:
@@ -407,7 +474,10 @@ _agent_instance = None
 @function_tool
 async def ask_for_clarification(context: RunContext, unclear_part: str) -> str:
     """Ask the user to clarify or rephrase their question when it's unclear"""
-    logger.info(f"🤔 ASKING FOR CLARIFICATION: {unclear_part}")
+    if verbose_mode:
+        logger.info(f"🤔 ASKING FOR CLARIFICATION: {unclear_part}")
+    else:
+        print(f"🤔 Asking for clarification about: {unclear_part}")
     
     clarification_messages = [
         f"I want to make sure I understand your question correctly. Could you please rephrase what you're asking about {unclear_part}?",
@@ -424,9 +494,12 @@ async def escalate_to_supervisor(context: RunContext, question: str, reason: str
     """Escalate a question to human supervisor when the LLM cannot answer from the knowledge base"""
     global _agent_instance
     
-    logger.info(f"🚨 ESCALATION TRIGGERED!")
-    logger.info(f"   Question: {question}")
-    logger.info(f"   Reason: {reason}")
+    if verbose_mode:
+        logger.info(f"🚨 ESCALATION TRIGGERED!")
+        logger.info(f"   Question: {question}")
+        logger.info(f"   Reason: {reason}")
+    else:
+        print(f"🚨 Escalating question to supervisor")
     
     if not _agent_instance:
         logger.error("❌ Agent instance not available for escalation")
@@ -434,7 +507,8 @@ async def escalate_to_supervisor(context: RunContext, question: str, reason: str
     
     try:
         caller_id = getattr(context, 'room_name', f'console_caller_{asyncio.get_event_loop().time()}')
-        logger.info(f"   Caller ID: {caller_id}")
+        if verbose_mode:
+            logger.info(f"   Caller ID: {caller_id}")
         
         # Load pending help requests to check for duplicates
         await _agent_instance.load_pending_help_requests()
@@ -443,8 +517,11 @@ async def escalate_to_supervisor(context: RunContext, question: str, reason: str
         if duplicate_check["is_duplicate"]:
             existing_request = duplicate_check["existing_request"]
             similarity = duplicate_check["similarity_score"]
-            logger.info(f"🔄 Duplicate request detected (similarity: {similarity:.2f})")
-            logger.info(f"   Existing request ID: {existing_request['id']}")
+            if verbose_mode:
+                logger.info(f"🔄 Duplicate request detected (similarity: {similarity:.2f})")
+                logger.info(f"   Existing request ID: {existing_request['id']}")
+            else:
+                print(f"🔄 Similar question already pending")
             
             return ("I see you've asked a similar question recently, and I've already forwarded it to my supervisor. "
                    "They'll get back to you shortly with an answer. In the meantime, do you have any other questions I can help you with?")
@@ -457,9 +534,12 @@ async def escalate_to_supervisor(context: RunContext, question: str, reason: str
         )
         
         if request_id:
-            logger.info(f"✅ Successfully escalated to supervisor!")
-            logger.info(f"   Request ID: {request_id}")
-            logger.info(f"   Check dashboard: http://localhost:3000/dashboard")
+            if verbose_mode:
+                logger.info(f"✅ Successfully escalated to supervisor!")
+                logger.info(f"   Request ID: {request_id}")
+                logger.info(f"   Check dashboard: http://localhost:3000/dashboard")
+            else:
+                print(f"✅ Question escalated (ID: {request_id})")
             
             escalation_messages = [
                 "Let me check with my supervisor and get back to you with that information. Please hold on for just a moment - I'll have an answer for you shortly. In the meantime, do you have any other questions I can help you with?",
@@ -491,8 +571,12 @@ async def entrypoint(ctx: JobContext):
     # Start webhook server
     webhook_thread = start_webhook_server(voice_agent.webhook_port)
     
-    logger.info(f"🎙️ Starting {voice_agent.agent_name}")
-    logger.info(f"🔗 Connected to room: {ctx.room.name}")
+    if verbose_mode:
+        logger.info(f"🎙️ Starting {voice_agent.agent_name}")
+        logger.info(f"🔗 Connected to room: {ctx.room.name}")
+    else:
+        print(f"🎙️ {voice_agent.agent_name} starting...")
+        print(f"🔗 Connected to room: {ctx.room.name}")
     
     # Load knowledge base and pending help requests for LLM context
     knowledge_base_content = await voice_agent.load_knowledge_base()
@@ -579,8 +663,9 @@ Available tools:
     # Store session globally for webhook access
     active_sessions[caller_id] = session
     
-    # Start periodic knowledge base refresh task
-    refresh_task = asyncio.create_task(voice_agent.refresh_knowledge_base_periodically())
+    # Start both periodic refresh tasks independently
+    kb_refresh_task = asyncio.create_task(voice_agent.refresh_knowledge_base_periodically())
+    hr_refresh_task = asyncio.create_task(voice_agent.refresh_help_requests_periodically())
     
     # Start the session
     await session.start(agent=agent, room=ctx.room)
@@ -590,22 +675,30 @@ Available tools:
         instructions=f"Greet the caller professionally as {voice_agent.agent_name} and ask how you can help them today. Remember to escalate any questions not directly covered in your knowledge."
     )
     
-    logger.info("✅ Voice agent is ready and listening...")
+    print("✅ Voice agent is ready and listening...")
     
     # Clean up session when done
     try:
         await asyncio.Future()  # Keep running
     except asyncio.CancelledError:
-        # Cancel the refresh task
-        refresh_task.cancel()
+        # Cancel both refresh tasks
+        kb_refresh_task.cancel()
+        hr_refresh_task.cancel()
         try:
-            await refresh_task
+            await kb_refresh_task
+        except asyncio.CancelledError:
+            pass
+        try:
+            await hr_refresh_task
         except asyncio.CancelledError:
             pass
         
         if caller_id in active_sessions:
             del active_sessions[caller_id]
-        logger.info(f"🔚 Session ended for caller {caller_id}")
+        if verbose_mode:
+            logger.info(f"🔚 Session ended for caller {caller_id}")
+        else:
+            print(f"🔚 Session ended")
 
 if __name__ == "__main__":
     # Run the agent
