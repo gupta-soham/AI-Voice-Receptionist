@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Phase 1: All Mermaid Diagrams</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            margin: 20px;
+            background: #f8fafc;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .diagram-section {
+            margin: 40px 0;
+            padding: 20px;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+        }
+        .mermaid {
+            text-align: center;
+            background: white;
+            margin: 20px 0;
+        }
+        .export-info {
+            background: #fef3c7;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+            border-left: 4px solid #f59e0b;
+        }
+        h1 {
+            color: #1e293b;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        h2 {
+            color: #475569;
+            border-bottom: 2px solid #e2e8f0;
+            padding-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🏗️ Phase 1: Complete Mermaid Diagram Collection</h1>
+        
+        <div class="export-info">
+            <h3>📤 Export Individual Diagrams to PNG:</h3>
+            <ol>
+                <li><strong>Right-click on any diagram</strong> → Save image as PNG</li>
+                <li><strong>Browser screenshot:</strong> Use developer tools for high-res capture</li>
+                <li><strong>Print section:</strong> Select specific diagram area and print to PDF</li>
+                <li><strong>Online converter:</strong> Copy mermaid code to mermaid.live for PNG export</li>
+            </ol>
+        </div>
+        
+        <div class="diagram-section">
+            <h2>📊 Architecture Diagram</h2>
+            <div class="mermaid">
+graph TB
+    subgraph "Voice Processing Layer"
+        VA[🤖 Voice Agent]
+        STT[🎤 Deepgram STT]
+        TTS[🔊 ElevenLabs TTS]
+        LLM[🧠 Gemini 2.0 Flash]
+    end
+    
+    subgraph "Backend Layer"
+        API[⚛️ Next.js API]
+        DB[(🗄️ PostgreSQL)]
+    end
+    
+    subgraph "Frontend Layer"
+        D[🖥️ Dashboard]
+        S[👨💼 Supervisor]
+    end
+    
+    subgraph "Infrastructure"
+        L[☁️ LiveKit Cloud]
+        C[📞 Phone Caller]
+    end
+    
+    C <--> L
+    L <--> VA
+    VA <--> STT
+    VA <--> TTS
+    VA <--> LLM
+    VA <--> API
+    API <--> DB
+    API <--> D
+    D <--> S
+    
+    style VA fill:#f3e8ff,stroke:#7c3aed
+    style API fill:#f3e8ff,stroke:#7c3aed
+    style D fill:#e0f2fe,stroke:#0284c7
+    style DB fill:#f0fdf4,stroke:#22c55e
+            </div>
+        </div>
+        
+        <div class="diagram-section">
+            <h2>📊 Sequence Diagram</h2>
+            <div class="mermaid">
+sequenceDiagram
+    participant C as 📞 Phone Caller
+    participant L as ☁️ LiveKit Cloud
+    participant VA as 🤖 Voice Agent
+    participant STT as 🎤 Deepgram STT
+    participant LLM as 🧠 Gemini 2.0 Flash
+    participant TTS as 🔊 ElevenLabs TTS
+    participant API as ⚛️ Next.js API
+    participant DB as 🗄️ PostgreSQL
+    participant S as 👨💼 Supervisor
+    participant D as 🖥️ Dashboard
+
+    Note over C,D: Phase 1: Text-Based Escalation Flow
+
+    %% Call Initiation
+    C->>L: 1. Phone Call
+    L->>VA: 2. WebRTC Audio Stream
+    
+    %% Voice Processing
+    VA->>STT: 3. Audio Data
+    STT->>VA: Transcribed Text
+    
+    %% Knowledge Query
+    VA->>API: 4. Query Knowledge Base
+    API->>DB: Search existing knowledge
+    DB->>API: Knowledge results
+    API->>VA: Knowledge response
+    
+    %% AI Processing
+    VA->>LLM: 5. Process with context + knowledge
+    LLM->>VA: Response + Confidence Score
+    
+    %% Decision Point
+    alt High Confidence (≥ 0.7)
+        VA->>TTS: Generate direct answer
+        TTS->>VA: Audio response
+        VA->>L: Audio stream
+        L->>C: Direct answer delivered
+    else Low Confidence (< 0.7)
+        %% Escalation Flow
+        rect rgb(255, 240, 240)
+            Note over VA,S: Escalation to Human Supervisor
+            
+            VA->>API: 6. Create Help Request
+            API->>DB: Store help request (PENDING)
+            DB->>API: Request ID
+            API->>VA: Escalation confirmed
+            
+            %% Inform Caller
+            VA->>TTS: 7. "Let me connect you with supervisor..."
+            TTS->>VA: Hold message audio
+            VA->>L: Hold message
+            L->>C: Escalation message
+            
+            %% Supervisor Notification
+            API->>D: 8. Real-time notification
+            D->>S: Dashboard alert
+            
+            %% Supervisor Response
+            S->>D: 9. Review request
+            S->>D: 10. Provide answer
+            D->>API: Submit resolution
+            API->>DB: Update request (RESOLVED)
+            
+            %% Webhook Delivery
+            API->>VA: 11. Webhook: Answer ready
+            VA->>TTS: 12. Generate answer audio
+            TTS->>VA: Answer audio
+            VA->>L: Final answer
+            L->>C: Answer delivered
+        end
+    end
+    
+    Note over C,D: Call completed with resolution
+            </div>
+        </div>
+        
+        <div class="diagram-section">
+            <h2>📊 Flowchart Diagram</h2>
+            <div class="mermaid">
+flowchart TD
+    A[📞 Phone Call Received] --> B[🎤 Voice Processing]
+    B --> C[🧠 AI Analysis]
+    C --> D{🎯 Confidence Check}
+    
+    D -->|High ≥ 0.7| E[✅ Direct Answer]
+    D -->|Low < 0.7| F[🚨 Escalate to Human]
+    
+    E --> G[🔊 TTS Response]
+    G --> H[📞 Call Complete]
+    
+    F --> I[📝 Create Help Request]
+    I --> J[📢 Notify Supervisor]
+    J --> K[👨💼 Supervisor Responds]
+    K --> L[🔗 Webhook Delivery]
+    L --> M[🔊 TTS Final Answer]
+    M --> H
+                
+    style F fill:#fef2f2,stroke:#ef4444
+    style I fill:#fef2f2,stroke:#ef4444
+    style J fill:#fef2f2,stroke:#ef4444
+    style K fill:#fef2f2,stroke:#ef4444
+    style L fill:#fef2f2,stroke:#ef4444
+            </div>
+        </div>
+
+        <div class="diagram-section">
+            <h2>📊 Flowchart Diagram (Agent Assessment)</h2>
+            <div class="mermaid">
+flowchart LR
+    A[User Query] --> B[Knowledge Search]
+    B --> C[Fuzzy Matching]
+    C --> D[AI Processing]
+    D --> E{Confidence Score}
+    
+    E -->|≥ 0.8| F[High: Direct Answer]
+    E -->|0.4-0.7| G[Medium: Ask Clarification]
+    E -->|< 0.4| H[Low: Escalate to Human]
+    
+    F --> I[TTS Response]
+    G --> J[Clarification Request]
+    H --> K[Create Help Request]
+    
+    K --> L[Supervisor Dashboard]
+    L --> M[Human Response]
+    M --> N[Webhook to Agent]
+    N --> O[TTS Final Answer]
+    
+    style H fill:#fef2f2,stroke:#ef4444
+    style K fill:#fef2f2,stroke:#ef4444
+    style L fill:#fef2f2,stroke:#ef4444
+    style M fill:#fef2f2,stroke:#ef4444
+    style N fill:#fef2f2,stroke:#ef4444
+            </div>
+        </div>
+        
+    </div>
+    
+    <script>
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'default',
+            themeVariables: {
+                primaryColor: '#3b82f6',
+                primaryTextColor: '#1e293b',
+                primaryBorderColor: '#e2e8f0',
+                lineColor: '#64748b',
+                secondaryColor: '#f1f5f9',
+                tertiaryColor: '#f8fafc'
+            }
+        });
+    </script>
+</body>
+</html>

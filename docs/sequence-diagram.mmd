@@ -1,0 +1,74 @@
+sequenceDiagram
+    participant C as 📞 Phone Caller
+    participant L as ☁️ LiveKit Cloud
+    participant VA as 🤖 Voice Agent
+    participant STT as 🎤 Deepgram STT
+    participant LLM as 🧠 Gemini 2.0 Flash
+    participant TTS as 🔊 ElevenLabs TTS
+    participant API as ⚛️ Next.js API
+    participant DB as 🗄️ PostgreSQL
+    participant S as 👨💼 Supervisor
+    participant D as 🖥️ Dashboard
+
+    Note over C,D: Phase 1: Text-Based Escalation Flow
+
+    %% Call Initiation
+    C->>L: 1. Phone Call
+    L->>VA: 2. WebRTC Audio Stream
+    
+    %% Voice Processing
+    VA->>STT: 3. Audio Data
+    STT->>VA: Transcribed Text
+    
+    %% Knowledge Query
+    VA->>API: 4. Query Knowledge Base
+    API->>DB: Search existing knowledge
+    DB->>API: Knowledge results
+    API->>VA: Knowledge response
+    
+    %% AI Processing
+    VA->>LLM: 5. Process with context + knowledge
+    LLM->>VA: Response + Confidence Score
+    
+    %% Decision Point
+    alt High Confidence (≥ 0.7)
+        VA->>TTS: Generate direct answer
+        TTS->>VA: Audio response
+        VA->>L: Audio stream
+        L->>C: Direct answer delivered
+    else Low Confidence (< 0.7)
+        %% Escalation Flow
+        rect rgb(255, 240, 240)
+            Note over VA,S: Escalation to Human Supervisor
+            
+            VA->>API: 6. Create Help Request
+            API->>DB: Store help request (PENDING)
+            DB->>API: Request ID
+            API->>VA: Escalation confirmed
+            
+            %% Inform Caller
+            VA->>TTS: 7. "Let me connect you with supervisor..."
+            TTS->>VA: Hold message audio
+            VA->>L: Hold message
+            L->>C: Escalation message
+            
+            %% Supervisor Notification
+            API->>D: 8. Real-time notification
+            D->>S: Dashboard alert
+            
+            %% Supervisor Response
+            S->>D: 9. Review request
+            S->>D: 10. Provide answer
+            D->>API: Submit resolution
+            API->>DB: Update request (RESOLVED)
+            
+            %% Webhook Delivery
+            API->>VA: 11. Webhook: Answer ready
+            VA->>TTS: 12. Generate answer audio
+            TTS->>VA: Answer audio
+            VA->>L: Final answer
+            L->>C: Answer delivered
+        end
+    end
+    
+    Note over C,D: Call completed with resolution
